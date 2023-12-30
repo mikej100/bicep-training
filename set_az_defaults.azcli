@@ -1,0 +1,2 @@
+az account set --subscription aec48d38-b0d1-45a2-a5db-c5e2c02247c8
+az configure  --defaults group=20231229_training
