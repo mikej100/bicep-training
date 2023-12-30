@@ -216,7 +216,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-03-01' = {
       }
       dataDisks: [
         {
-          diskSizeGB: 1023
+          diskSizeGB: 12
           lun: 0
           createOption: 'Empty'
         }
