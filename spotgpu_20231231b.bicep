@@ -1,18 +1,25 @@
+// Create a small linux vm, in the free tier of vms (the disks are billable)
+//
+// Forces use of ssh public key to login, default key ties this to authors machine
+//
 // Derived from ms quicstart at https://learn.microsoft.com/en-us/azure/virtual-machines/windows/quick-create-bicep?tabs=CLI
 //
+@description('Name of the virtual machine.')
+param vmName string = 'spot-20231231b'
+
+@description('Name for the Public IP used to access the Virtual Machine.')
+param publicIpName string = 'spot-20231231b'
+
 @description('Username for the Virtual Machine.')
 param adminUsername string = 'mikejenn'
 
-@description('Password for the Virtual Machine.')
-@minLength(8)
-@secure()
-param adminPassword string
+// @description('Password for the Virtual Machine.')
+// @minLength(8)
+// @secure()
+// param adminPassword string 
 
 @description('Unique DNS Name for the Public IP used to access the Virtual Machine.')
 param dnsLabelPrefix string = toLower('${vmName}-${uniqueString(resourceGroup().id, vmName)}')
-
-@description('Name for the Public IP used to access the Virtual Machine.')
-param publicIpName string = 'myPublicIP'
 
 @description('Allocation method for the Public IP used to access the Virtual Machine.')
 @allowed([
@@ -35,13 +42,10 @@ param publicIpSku string = 'Basic'
 param OSVersion string = '20_04-lts-gen2'
 
 @description('Size of the virtual machine.')
-param vmSize string = 'Standard_B1s'
+param vmSize string = 'Standard_B2s_v2'
 
 @description('Location for all resources.')
-param location string = resourceGroup().location
-
-@description('Name of the virtual machine.')
-param vmName string = 'bicep-trainer-20231229'
+param location string = 'centralus'
 
 @description('Security Type of the Virtual Machine.')
 @allowed([
@@ -50,13 +54,13 @@ param vmName string = 'bicep-trainer-20231229'
 ])
 param securityType string = 'TrustedLaunch'
 
-var storageAccountName = 'bootdiags${uniqueString(resourceGroup().id)}'
-var nicName = 'bicepVMNic20231230'
+var nicName = 'spotNic0231231b'
+var virtualNetworkName = 'spotVNET20231231b'
+var networkSecurityGroupName = 'spot20231231b-nsg'
+var storageAccountName = 'spotuscen${uniqueString(resourceGroup().id)}'
 var addressPrefix = '10.0.0.0/16'
 var subnetName = 'Subnet'
 var subnetPrefix = '10.0.0.0/24'
-var virtualNetworkName = 'bicepVNET20231229'
-var networkSecurityGroupName = 'training-20231229-nsg'
 var securityProfileJson = {
   uefiSettings: {
     secureBootEnabled: true
@@ -65,11 +69,6 @@ var securityProfileJson = {
   securityType: securityType
 }
 var publicKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDBxFHMCT21LDP4CVjysFcE8DLZc75Itc4GoEhtLzQL4pkOTmGgUSbvntvXOERwOylKGOOlvgD6gLGoQDoaMTqki+XxOQj1VoWLn8ivhJxmLivf/XMK5DrAFJlwxo1h+bFxrHGIAwXkGeu58ej9RI5PPwx+mwKAgFTrkseZOaIfskHBucIUf4jJ+fEd68hyR1rheUEyxA6m/LDkPd0q1bCtHuzQz6W/yjPPEJeeit1eOYDPegydBr2ZzY1CB/2WxtiyKBe6NZ9mZRFDZp0e8gF4oqiiVox6wen0669Jq9vHOvQHgCTWnPVcmdQr8Hw3fJRGQzeA1wTpHAunuimlB33FcBku4BbTR8jMgmhTvUK+caI1AfCJQyiIVaOER+X2AWdJTAiXcNwzRtchLPa64bJCULZ/DBmJPgTLL09mzp702XIPk+3Kna6VROZ6jju8YJgkVekM1x9ir8sRSAkVhZMXBdLk0Y1H0Y1wtSwjGSGlxwRctzXVNs/1Rsdhh7uVSqk= generated-by-azure'
-var extensionName = 'GuestAttestation'
-var extensionPublisher = 'Microsoft.Azure.Security.WindowsAttestation'
-var extensionVersion = '1.0'
-var maaTenantName = 'GuestAttestation'
-var maaEndpoint = substring('emptyString', 0, 0)
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: storageAccountName
@@ -99,35 +98,48 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2022-05-01' = {
 resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2022-05-01' = {
   name: networkSecurityGroupName
   location: location
+ properties: {
+   securityRules: [
+     {
+       name: 'default-allow-3389'
+       properties: {
+         priority: 900
+         access: 'Allow'
+         direction: 'Inbound'
+         destinationPortRange: '3389'
+         protocol: 'Tcp'
+         sourcePortRange: '*'
+         sourceAddressPrefix: '*'
+         destinationAddressPrefix: '*'
+       }
+     }
+     {
+       name: 'mwj-allow-ssh'
+       properties: {
+         priority: 1000
+         access: 'Allow'
+         direction: 'Inbound'
+         destinationPortRange: '22'
+         protocol: 'Tcp'
+         sourcePortRange: '*'
+         sourceAddressPrefix: '*'
+         destinationAddressPrefix: '*'
+       }
+     }
+   ]
+ }
+}
+resource symbolicname 'Microsoft.Compute/sshPublicKeys@2023-03-01' = {
+  name: 'spotPubKey20231231b'
+  location: location
+  tags: {
+    tagName1: 'tagValue1'
+    tagName2: 'tagValue2'
+  }
   properties: {
-    securityRules: [
-      {
-        name: 'mwj-allow-ssh'
-        properties: {
-          priority: 1000
-          access: 'Allow'
-          direction: 'Inbound'
-          destinationPortRange: '22'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '*'
-        }
-      }
-    ]
+    publicKey: publicKey
   }
 }
-// resource symbolicname 'Microsoft.Compute/sshPublicKeys@2023-03-01' = {
-//   name: 'string'
-//   location: location
-//   tags: {
-//     tagName1: 'tagValue1'
-//     tagName2: 'tagValue2'
-//   }
-//   propertVjies: {
-//     publicKey: publicKey
-//   }
-// }
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2022-05-01' = {
   name: virtualNetworkName
   location: location
@@ -179,19 +191,24 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-03-01' = {
   name: vmName
   location: location
   properties: {
+    priority: 'Spot'
+    evictionPolicy: 'Delete'
+    billingProfile: {
+      maxPrice: -1
+    }
     hardwareProfile: {
       vmSize: vmSize
     }
     osProfile: {
       computerName: vmName
       adminUsername: adminUsername
-      adminPassword: adminPassword
+      // adminPassword: adminPassword
       linuxConfiguration: {
-        disablePasswordAuthentication: false
+        disablePasswordAuthentication: true
         ssh: {
           publicKeys: [
             {
-              path: '~/.ssh/authorized_keys'
+              path: '/home/mikejenn/.ssh/authorized_keys'
               keyData: publicKey
             }
           ]
@@ -213,7 +230,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2022-03-01' = {
       }
       dataDisks: [
         {
-          diskSizeGB: 1023
+          diskSizeGB: 12
           lun: 0
           createOption: 'Empty'
         }

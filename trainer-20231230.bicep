@@ -1,3 +1,7 @@
+// Create a small linux vm, in the free tier of vms (the disks are billable)
+//
+// Forces use of ssh public key to login, default key ties this to authors machine
+//
 // Derived from ms quicstart at https://learn.microsoft.com/en-us/azure/virtual-machines/windows/quick-create-bicep?tabs=CLI
 //
 @description('Name of the virtual machine.')
