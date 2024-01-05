@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 #
+# Code derived from https://learn.microsoft.com/en-gb/rest/api/cost-management/retail-prices/azure-retail-prices
+#
 import requests
 import json
 from tabulate import tabulate 
@@ -15,7 +17,12 @@ def main():
     table_data.append(['SKU', 'Retail Price', 'Unit of Measure', 'Region', 'Meter', 'Product Name'])
     
     api_url = "https://prices.azure.com/api/retail/prices?api-version=2021-10-01-preview"
-    query = "armRegionName eq 'southcentralus' and armSkuName eq 'Standard_NP20s' and priceType eq 'Consumption' and contains(meterName, 'Spot')"
+    # query = "armSkuName eq 'Standard_NC4as_T4_v3' and priceType eq 'Consumption' and contains(meterName, 'Spot')"
+    query = "armSkuName eq 'Standard_NC4as_T4_v3' and priceType eq 'Consumption' and contains(meterName, 'Spot')"
+
+
+    # query = "armRegionName eq 'uksouth' and armSkuName eq 'Standard_NC4as_v3' and priceType eq 'Consumption' and contains(meterName, 'Spot')"
+    # query = "armRegionName eq 'uksouth'  and priceType eq 'Consumption' and contains(meterName, 'Spot')"
     response = requests.get(api_url, params={'$filter': query})
     json_data = json.loads(response.text)
     
