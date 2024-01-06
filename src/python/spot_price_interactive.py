@@ -10,7 +10,14 @@ from tabulate import tabulate
 def build_pricing_table(json_data, table_data):
     for item in json_data['Items']:
         meter = item['meterName']
-        table_data.append([item['armSkuName'], item['retailPrice'], item['unitOfMeasure'], item['armRegionName'], meter, item['productName']])
+        table_data.append([
+            item['armSkuName'],
+            item['retailPrice'],
+            item['unitOfMeasure'], 
+            item['armRegionName']
+            # meter,
+            #item['productName']
+            ])
         
 def main():
     table_data = []
